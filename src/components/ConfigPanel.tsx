@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { PickerConfig, ViewType } from '../types/google-picker';
 import { VIEW_TYPE_LABELS } from '../types/google-picker';
 
@@ -9,83 +9,99 @@ interface ConfigPanelProps {
 
 const VIEW_TYPES: ViewType[] = ['all', 'docs', 'sheets', 'slides', 'images', 'pdfs'];
 
+function maskString(str: string, keepStart = 8, keepEnd = 4): string {
+  if (!str) return '—';
+  if (str.length <= keepStart + keepEnd) return str;
+  return `${str.substring(0, keepStart)}••••••••${str.substring(str.length - keepEnd)}`;
+}
+
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onChange }) => {
+  const [showOverride, setShowOverride] = useState(false);
+  const [showFullKeys, setShowFullKeys] = useState(false);
+
   const update = (field: keyof PickerConfig, value: string | boolean) => {
     onChange({ ...config, [field]: value });
   };
 
+  const handleResetToEnv = () => {
+    onChange({
+      apiKey: import.meta.env.VITE_GOOGLE_API_KEY ?? '',
+      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
+      appId: import.meta.env.VITE_GOOGLE_APP_ID ?? '',
+      scope: import.meta.env.VITE_GOOGLE_SCOPE ?? 'https://www.googleapis.com/auth/drive.readonly',
+      viewType: config.viewType,
+      multiselect: config.multiselect,
+    });
+  };
+
+  const isKeyConfigured = Boolean(config.apiKey);
+  const isClientConfigured = Boolean(config.clientId);
+  const isAppIdConfigured = Boolean(config.appId);
+
   return (
     <section className="panel" id="config-panel">
-      <h2 className="panel-title">
-        <span className="panel-icon">⚙️</span> Configuration
-      </h2>
-      <div className="config-grid">
-        <div className="form-group">
-          <label htmlFor="api-key" className="form-label">
-            Google API Key
-            <span className="form-hint">From Google Cloud Console → Credentials</span>
-          </label>
-          <input
-            id="api-key"
-            type="password"
-            className="form-input"
-            placeholder="AIza..."
-            value={config.apiKey}
-            onChange={(e) => update('apiKey', e.target.value)}
-            autoComplete="off"
-          />
+      {/* <div className="panel-header-row">
+        <h2 className="panel-title" style={{ margin: 0, border: 'none', padding: 0 }}>
+          <span className="panel-icon">⚙️</span> Cấu hình Google API (.env)
+        </h2>
+        <span className="env-tag">.env</span>
+      </div> */}
+
+      {/* <div className="env-status-card">
+        <div className="env-status-item">
+          <div className="env-status-label">
+            <span>API Key</span>
+            <span className={`status-dot ${isKeyConfigured ? 'status-dot--ok' : 'status-dot--missing'}`} />
+          </div>
+          <div className="env-status-value">
+            <code>
+              {isKeyConfigured
+                ? (showFullKeys ? config.apiKey : maskString(config.apiKey, 8, 4))
+                : 'Chưa có trong .env'}
+            </code>
+          </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="client-id" className="form-label">
-            OAuth Client ID
-            <span className="form-hint">Web application OAuth 2.0 Client ID</span>
-          </label>
-          <input
-            id="client-id"
-            type="password"
-            className="form-input"
-            placeholder="123...apps.googleusercontent.com"
-            value={config.clientId}
-            onChange={(e) => update('clientId', e.target.value)}
-            autoComplete="off"
-          />
+        <div className="env-status-item">
+          <div className="env-status-label">
+            <span>OAuth Client ID</span>
+            <span className={`status-dot ${isClientConfigured ? 'status-dot--ok' : 'status-dot--missing'}`} />
+          </div>
+          <div className="env-status-value">
+            <code>
+              {isClientConfigured
+                ? (showFullKeys ? config.clientId : maskString(config.clientId, 12, 16))
+                : 'Chưa có trong .env'}
+            </code>
+          </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="app-id" className="form-label">
-            App ID / Project Number
-            <span className="form-hint">Google Cloud Project Number (not Project ID)</span>
-          </label>
-          <input
-            id="app-id"
-            type="text"
-            className="form-input"
-            placeholder="123456789012"
-            value={config.appId}
-            onChange={(e) => update('appId', e.target.value)}
-          />
+        <div className="env-status-item">
+          <div className="env-status-label">
+            <span>App ID / Project No</span>
+            <span className={`status-dot ${isAppIdConfigured ? 'status-dot--ok' : 'status-dot--missing'}`} />
+          </div>
+          <div className="env-status-value">
+            <code>{config.appId || 'Chưa có trong .env'}</code>
+          </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="scope" className="form-label">
-            OAuth Scope
-            <span className="form-hint">Space-separated list of OAuth scopes</span>
-          </label>
-          <input
-            id="scope"
-            type="text"
-            className="form-input"
-            placeholder="https://www.googleapis.com/auth/drive.readonly"
-            value={config.scope}
-            onChange={(e) => update('scope', e.target.value)}
-          />
+        <div className="env-status-actions">
+          <button
+            type="button"
+            className="btn-link"
+            onClick={() => setShowFullKeys(!showFullKeys)}
+          >
+            {showFullKeys ? 'Ẩn bớt ký tự' : 'Hiện đầy đủ'}
+          </button>
         </div>
+      </div> */}
 
+      <div className="config-grid" style={{ marginTop: '14px' }}>
         <div className="form-group">
           <label htmlFor="view-type" className="form-label">
-            Picker View
-            <span className="form-hint">Filter file types shown in the picker</span>
+            Chế độ xem (View Filter)
+            <span className="form-hint">Lọc loại tệp hiển thị trong Google Picker</span>
           </label>
           <select
             id="view-type"
@@ -110,22 +126,86 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onChange }) =>
               checked={config.multiselect}
               onChange={(e) => update('multiselect', e.target.checked)}
             />
-            Allow Multiple File Selection
+            Cho phép chọn nhiều file cùng lúc (Multi-select)
           </label>
         </div>
       </div>
 
-      <div className="config-status">
-        <span className={`config-badge ${config.apiKey ? 'config-badge--ok' : 'config-badge--missing'}`}>
-          {config.apiKey ? '✓ API Key' : '✗ API Key missing'}
-        </span>
-        <span className={`config-badge ${config.clientId ? 'config-badge--ok' : 'config-badge--missing'}`}>
-          {config.clientId ? '✓ Client ID' : '✗ Client ID missing'}
-        </span>
-        <span className={`config-badge ${config.appId ? 'config-badge--ok' : 'config-badge--missing'}`}>
-          {config.appId ? '✓ App ID' : '✗ App ID missing'}
-        </span>
-      </div>
+      {/* Collapsible advanced manual override */}
+      {/* <div className="override-accordion">
+        <button
+          type="button"
+          className="override-toggle-btn"
+          onClick={() => setShowOverride(!showOverride)}
+        >
+          <span>{showOverride ? '▼' : '►'} Chỉnh sửa thủ công (nếu không dùng .env)</span>
+        </button>
+
+        {showOverride && (
+          <div className="override-content">
+            <div className="form-group">
+              <label htmlFor="manual-api-key" className="form-label">
+                API Key
+              </label>
+              <input
+                id="manual-api-key"
+                type="text"
+                className="form-input"
+                value={config.apiKey}
+                onChange={(e) => update('apiKey', e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="manual-client-id" className="form-label">
+                OAuth Client ID
+              </label>
+              <input
+                id="manual-client-id"
+                type="text"
+                className="form-input"
+                value={config.clientId}
+                onChange={(e) => update('clientId', e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="manual-app-id" className="form-label">
+                App ID / Project Number
+              </label>
+              <input
+                id="manual-app-id"
+                type="text"
+                className="form-input"
+                value={config.appId}
+                onChange={(e) => update('appId', e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="manual-scope" className="form-label">
+                OAuth Scope
+              </label>
+              <input
+                id="manual-scope"
+                type="text"
+                className="form-input"
+                value={config.scope}
+                onChange={(e) => update('scope', e.target.value)}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="btn-sm btn-secondary"
+              style={{ marginTop: '6px' }}
+              onClick={handleResetToEnv}
+            >
+              🔄 Khôi phục lại từ file .env
+            </button>
+          </div>
+        )}
+      </div> */}
     </section>
   );
 };

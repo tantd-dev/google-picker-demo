@@ -9,9 +9,9 @@ interface AuthStatusPanelProps {
 type StatusConfig = { icon: string; label: string; className: string };
 
 const STATUS_CONFIG: Record<AuthStatus, StatusConfig> = {
-  idle: { icon: '○', label: 'Not authenticated', className: 'auth-status--idle' },
-  authenticated: { icon: '●', label: 'Authenticated', className: 'auth-status--ok' },
-  error: { icon: '✕', label: 'Authentication error', className: 'auth-status--error' },
+  idle: { icon: '○', label: 'Chưa xác thực (Chờ mở Picker)', className: 'auth-status--idle' },
+  authenticated: { icon: '●', label: 'Đã xác thực tài khoản Google', className: 'auth-status--ok' },
+  error: { icon: '✕', label: 'Lỗi xác thực OAuth', className: 'auth-status--error' },
 };
 
 export const AuthStatusPanel: React.FC<AuthStatusPanelProps> = ({ status, error }) => {
@@ -20,7 +20,7 @@ export const AuthStatusPanel: React.FC<AuthStatusPanelProps> = ({ status, error 
   return (
     <section className="panel" id="auth-status-panel">
       <h2 className="panel-title">
-        <span className="panel-icon">🔐</span> Authentication Status
+        <span className="panel-icon">🔐</span> Trạng thái xác thực Google
       </h2>
       <div className={`auth-status ${cfg.className}`}>
         <span className="auth-status-icon">{cfg.icon}</span>
@@ -28,20 +28,19 @@ export const AuthStatusPanel: React.FC<AuthStatusPanelProps> = ({ status, error 
       </div>
       {status === 'idle' && (
         <p className="auth-hint">
-          Authentication is handled automatically by the Google Drive Picker when you open it.
-          Click <strong>"Open Google Drive Picker"</strong> to begin the OAuth flow.
+          Quy trình xác thực OAuth 2.0 sẽ tự động kích hoạt khi bạn nhấn nút <strong>"Mở Google Driver"</strong>.
         </p>
       )}
       {status === 'authenticated' && (
         <p className="auth-hint auth-hint--success">
-          ✓ OAuth token obtained. The picker is ready to use.
+          ✓ Token OAuth đã được cấp. Google Drive Picker đã sẵn sàng.
         </p>
       )}
       {status === 'error' && error && (
         <div className="auth-error">
-          <strong>Error:</strong> {error}
+          <strong>Chi tiết lỗi:</strong> {error}
           <p className="auth-error-hint">
-            Check that your Client ID is correct and that your domain is listed in Authorized JavaScript Origins.
+            Vui lòng kiểm tra Client ID trong file <code>.env</code> và đảm bảo URL hiện tại (ví dụ <code>http://localhost:5173</code>) đã được thêm vào mục <strong>Authorized JavaScript origins</strong> trong Google Cloud Console.
           </p>
         </div>
       )}

@@ -31,9 +31,13 @@ function App() {
   const [selectedFiles, setSelectedFiles] = useState<DriveFile[]>([]);
   const [rawResponse, setRawResponse] = useState<unknown>(null);
   const [logs, setLogs] = useState<LogEntry[]>([
-    createLogEntry('INFO', 'Application initialized.'),
+    createLogEntry(
+      'INFO',
+      DEFAULT_CONFIG.apiKey && DEFAULT_CONFIG.clientId && DEFAULT_CONFIG.appId
+        ? 'Đã nạp thông tin cấu hình từ file .env thành công.'
+        : 'Cảnh báo: Chưa tìm thấy đầy đủ biến môi trường trong file .env.'
+    ),
   ]);
-  const [pickerVisible, setPickerVisible] = useState(false);
   const [detailFile, setDetailFile] = useState<DriveFile | null>(null);
 
   const addLog = useCallback((level: LogLevel, message: string) => {
@@ -54,7 +58,7 @@ function App() {
   );
 
   const handlePickerCancel = useCallback(() => {
-    // no-op; picker visible state is managed in PickerControls
+    // picker was cancelled by user
   }, []);
 
   const handleAuthSuccess = useCallback(() => {
@@ -83,7 +87,7 @@ function App() {
           <div>
             <h1 className="header-title">Google Drive Picker Playground</h1>
             <p className="header-subtitle">
-              POC · Powered by <code>@googleworkspace/drive-picker-react</code> v0.2.0
+              Sử dụng cấu hình từ file <code>.env</code> · Thư viện <code>@googleworkspace/drive-picker-react</code>
             </p>
           </div>
         </div>
@@ -93,19 +97,17 @@ function App() {
         <div className="layout">
           {/* Left column */}
           <div className="layout-left">
-            <ConfigPanel config={config} onChange={handleConfigChange} />
-            <AuthStatusPanel status={authStatus} error={authError} />
             <PickerControls
               config={config}
               authStatus={authStatus}
-              pickerVisible={pickerVisible}
-              onPickerVisibleChange={setPickerVisible}
               onFilesPicked={handleFilesPicked}
               onPickerCancel={handlePickerCancel}
               onAuthSuccess={handleAuthSuccess}
               onAuthError={handleAuthError}
               onLog={addLog}
             />
+            <ConfigPanel config={config} onChange={handleConfigChange} />
+            <AuthStatusPanel status={authStatus} error={authError} />
           </div>
 
           {/* Right column */}
@@ -116,7 +118,7 @@ function App() {
             />
             <JsonViewer
               data={detailFile ?? rawResponse}
-              title={detailFile ? `File Detail: ${detailFile.name}` : 'Raw Picker Response'}
+              title={detailFile ? `Chi tiết tệp: ${detailFile.name}` : 'Dữ liệu phản hồi gốc (Raw JSON)'}
               onClose={detailFile ? () => setDetailFile(null) : undefined}
             />
             <DebugConsole logs={logs} onClear={() => setLogs([])} />
@@ -126,7 +128,7 @@ function App() {
 
       <footer className="app-footer">
         <p>
-          Google Drive Picker API Playground — POC · No credentials are stored or sent to any server.
+          Google Drive Picker API Demo — Không lưu trữ hoặc gửi thông tin đăng nhập lên bất kỳ máy chủ nào.
         </p>
       </footer>
     </div>
