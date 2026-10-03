@@ -1,4 +1,3 @@
-// import React, { useState } from 'react';
 import React from 'react';
 import type { PickerConfig, ViewType } from '../types/google-picker';
 import { VIEW_TYPE_LABELS } from '../types/google-picker';
@@ -49,61 +48,18 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onChange }) =>
       </div> */}
 
       {/* <div className="env-status-card">
-        <div className="env-status-item">
-          <div className="env-status-label">
-            <span>API Key</span>
-            <span className={`status-dot ${isKeyConfigured ? 'status-dot--ok' : 'status-dot--missing'}`} />
-          </div>
-          <div className="env-status-value">
-            <code>
-              {isKeyConfigured
-                ? (showFullKeys ? config.apiKey : maskString(config.apiKey, 8, 4))
-                : 'Chưa có trong .env'}
-            </code>
-          </div>
-        </div>
-
-        <div className="env-status-item">
-          <div className="env-status-label">
-            <span>OAuth Client ID</span>
-            <span className={`status-dot ${isClientConfigured ? 'status-dot--ok' : 'status-dot--missing'}`} />
-          </div>
-          <div className="env-status-value">
-            <code>
-              {isClientConfigured
-                ? (showFullKeys ? config.clientId : maskString(config.clientId, 12, 16))
-                : 'Chưa có trong .env'}
-            </code>
-          </div>
-        </div>
-
-        <div className="env-status-item">
-          <div className="env-status-label">
-            <span>App ID / Project No</span>
-            <span className={`status-dot ${isAppIdConfigured ? 'status-dot--ok' : 'status-dot--missing'}`} />
-          </div>
-          <div className="env-status-value">
-            <code>{config.appId || 'Chưa có trong .env'}</code>
-          </div>
-        </div>
-
-        <div className="env-status-actions">
-          <button
-            type="button"
-            className="btn-link"
-            onClick={() => setShowFullKeys(!showFullKeys)}
-          >
-            {showFullKeys ? 'Ẩn bớt ký tự' : 'Hiện đầy đủ'}
-          </button>
-        </div>
+        ...
       </div> */}
 
       <div className="config-grid" style={{ marginTop: '14px' }}>
         <div className="form-group">
           <label htmlFor="view-type" className="form-label">
             Chế độ xem (View Filter)
-            <span className="form-hint">Lọc loại tệp hiển thị trong Google Picker</span>
+            <span className="form-hint">
+              Lọc loại tệp hiển thị trong Google Picker
+            </span>
           </label>
+
           <select
             id="view-type"
             className="form-select"
@@ -119,13 +75,12 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onChange }) =>
         </div>
 
         <div className="form-group form-group--checkbox">
-          <label htmlFor="multiselect" className="form-label form-label--inline">
+          <label className="form-label form-label--inline">
             <input
-              id="multiselect"
               type="checkbox"
               className="form-checkbox"
-              checked={config.multiselect}
-              onChange={(e) => update('multiselect', e.target.checked)}
+              checked={true}
+              disabled
             />
             Cho phép chọn nhiều file cùng lúc (Multi-select)
           </label>
