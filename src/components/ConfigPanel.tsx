@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// import React, { useState } from 'react';
+import React from 'react';
 import type { PickerConfig, ViewType } from '../types/google-picker';
 import { VIEW_TYPE_LABELS } from '../types/google-picker';
 
@@ -9,34 +10,34 @@ interface ConfigPanelProps {
 
 const VIEW_TYPES: ViewType[] = ['all', 'docs', 'sheets', 'slides', 'images', 'pdfs'];
 
-function maskString(str: string, keepStart = 8, keepEnd = 4): string {
-  if (!str) return '—';
-  if (str.length <= keepStart + keepEnd) return str;
-  return `${str.substring(0, keepStart)}••••••••${str.substring(str.length - keepEnd)}`;
-}
+// function maskString(str: string, keepStart = 8, keepEnd = 4): string {
+//   if (!str) return '—';
+//   if (str.length <= keepStart + keepEnd) return str;
+//   return `${str.substring(0, keepStart)}••••••••${str.substring(str.length - keepEnd)}`;
+// }
 
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onChange }) => {
-  const [showOverride, setShowOverride] = useState(false);
-  const [showFullKeys, setShowFullKeys] = useState(false);
+  // const [showOverride, setShowOverride] = useState(false);
+  // const [showFullKeys, setShowFullKeys] = useState(false);
 
   const update = (field: keyof PickerConfig, value: string | boolean) => {
     onChange({ ...config, [field]: value });
   };
 
-  const handleResetToEnv = () => {
-    onChange({
-      apiKey: import.meta.env.VITE_GOOGLE_API_KEY ?? '',
-      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
-      appId: import.meta.env.VITE_GOOGLE_APP_ID ?? '',
-      scope: import.meta.env.VITE_GOOGLE_SCOPE ?? 'https://www.googleapis.com/auth/drive.readonly',
-      viewType: config.viewType,
-      multiselect: config.multiselect,
-    });
-  };
+  // const handleResetToEnv = () => {
+  //   onChange({
+  //     apiKey: import.meta.env.VITE_GOOGLE_API_KEY ?? '',
+  //     clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
+  //     appId: import.meta.env.VITE_GOOGLE_APP_ID ?? '',
+  //     scope: import.meta.env.VITE_GOOGLE_SCOPE ?? 'https://www.googleapis.com/auth/drive.readonly',
+  //     viewType: config.viewType,
+  //     multiselect: config.multiselect,
+  //   });
+  // };
 
-  const isKeyConfigured = Boolean(config.apiKey);
-  const isClientConfigured = Boolean(config.clientId);
-  const isAppIdConfigured = Boolean(config.appId);
+  // const isKeyConfigured = Boolean(config.apiKey);
+  // const isClientConfigured = Boolean(config.clientId);
+  // const isAppIdConfigured = Boolean(config.appId);
 
   return (
     <section className="panel" id="config-panel">
