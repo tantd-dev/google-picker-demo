@@ -19,7 +19,7 @@ const DEFAULT_CONFIG: PickerConfig = {
   apiKey: import.meta.env.VITE_GOOGLE_API_KEY ?? '',
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
   appId: import.meta.env.VITE_GOOGLE_APP_ID ?? '',
-  scope: import.meta.env.VITE_GOOGLE_SCOPE ?? 'https://www.googleapis.com/auth/drive.readonly',
+  scope: import.meta.env.VITE_GOOGLE_SCOPE ?? 'https://www.googleapis.com/auth/drive.file',
   viewType: 'all',
   viewMode: 'list',
   multiselect: true,

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import '@googleworkspace/drive-picker-element';
 import {
   DrivePicker,
   DrivePickerDocsView,
   type DrivePickerDocsViewProps,
 } from '@googleworkspace/drive-picker-react';
+import { FloatingBasket } from './FloatingBasket';
 import type { PickerConfig, DriveFile, AuthStatus } from '../types/google-picker';
 import { VIEW_TYPE_MIME_TYPES, VIEW_TYPE_LABELS } from '../types/google-picker';
 import type {
@@ -36,8 +37,13 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [cachedToken, setCachedToken] = useState<string | null>(null);
 
+  // Basket (accumulative picking) state
+  const [basketItems, setBasketItems] = useState<DriveFile[]>([]);
+  const [isBasketVisible, setIsBasketVisible] = useState(false);
+
   const isConfigValid = Boolean(config.apiKey && config.clientId && config.appId);
 
+  // --- Open picker (first time or "pick more") ---
   const handleOpen = () => {
     if (!config.apiKey) {
       onLog('ERROR', 'Thiếu VITE_GOOGLE_API_KEY trong file .env');
@@ -54,13 +60,19 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
 
     onLog('INFO', 'Đang mở Google Driver...');
     setIsOpen(true);
+    setIsBasketVisible(true);
   };
 
   const handleCancelOpening = () => {
     setIsOpen(false);
     onLog('INFO', 'Đã hủy mở Google Drive Picker.');
+    // Keep basket visible if it has items
+    if (basketItems.length === 0) {
+      setIsBasketVisible(false);
+    }
   };
 
+  // --- Picker picked: add items to basket (deduplicate by ID) ---
   const handlePicked = (e: PickerPickedEvent) => {
     const response = e.detail as Record<string, unknown>;
     const docs = (response['docs'] ?? []) as Record<string, unknown>[];
@@ -106,14 +118,33 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
       'SUCCESS',
       `Google Drive: Đã chọn ${files.length} mục${breakdown} — ${files.map((f) => `${f.isFolder ? '📁 ' : '📄 '}${f.name}`).join(', ')}`
     );
-    onFilesPicked(files, response);
+
+    // Merge into basket (deduplicate by id)
+    setBasketItems((prev) => {
+      const existingIds = new Set(prev.map((item) => item.id));
+      const newItems = files.filter((f) => !existingIds.has(f.id));
+      if (newItems.length < files.length) {
+        const dupCount = files.length - newItems.length;
+        onLog('INFO', `Giỏ chọn: Đã bỏ qua ${dupCount} mục trùng lặp.`);
+      }
+      if (newItems.length > 0) {
+        onLog('INFO', `Giỏ chọn: Đã thêm ${newItems.length} mục mới vào giỏ. Tổng cộng: ${prev.length + newItems.length} mục.`);
+      }
+      return [...prev, ...newItems];
+    });
+
+    // Close the picker but keep basket visible for further picks
     setIsOpen(false);
   };
 
   const handleCanceled = (_e: PickerCanceledEvent) => {
     onLog('INFO', 'Google Drive: Người dùng đã đóng hoặc hủy chọn.');
-    onPickerCancel();
     setIsOpen(false);
+    // Keep basket visible if it has items
+    if (basketItems.length === 0) {
+      setIsBasketVisible(false);
+      onPickerCancel();
+    }
   };
 
   const handleOauthResponse = (e: OAuthResponseEvent) => {
@@ -137,6 +168,59 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
     onAuthError(msg);
     setIsOpen(false);
   };
+
+  // --- Basket actions ---
+  const handleBasketRemoveItem = useCallback((id: string) => {
+    setBasketItems((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const handleBasketClearAll = useCallback(() => {
+    setBasketItems([]);
+    onLog('INFO', 'Giỏ chọn: Đã xóa toàn bộ mục.');
+  }, [onLog]);
+
+  const handleBasketPickMore = useCallback(() => {
+    onLog('INFO', 'Đang mở Google Driver để chọn thêm...');
+    setIsOpen(true);
+  }, [onLog]);
+
+  const handleBasketConfirm = useCallback(() => {
+    if (basketItems.length === 0) return;
+
+    const folderCount = basketItems.filter((f) => f.isFolder).length;
+    const fileCount = basketItems.length - folderCount;
+    const summaryParts: string[] = [];
+    if (folderCount > 0) summaryParts.push(`${folderCount} thư mục`);
+    if (fileCount > 0) summaryParts.push(`${fileCount} tệp`);
+    const breakdown = summaryParts.length > 0 ? ` (${summaryParts.join(', ')})` : '';
+
+    onLog(
+      'SUCCESS',
+      `Xác nhận giỏ chọn: ${basketItems.length} mục${breakdown} — ${basketItems.map((f) => `${f.isFolder ? '📁 ' : '📄 '}${f.name}`).join(', ')}`
+    );
+
+    // Send all accumulated items to the main table
+    onFilesPicked(basketItems, { action: 'picked', docs: basketItems });
+
+    // Clear basket state
+    setBasketItems([]);
+    setIsBasketVisible(false);
+    setIsOpen(false);
+  }, [basketItems, onFilesPicked, onLog]);
+
+  const handleBasketDismiss = useCallback(() => {
+    if (basketItems.length > 0) {
+      // If there are items, just hide the basket but keep items
+      // User can re-open by clicking the main button
+      setIsBasketVisible(false);
+      setIsOpen(false);
+      onLog('INFO', `Giỏ chọn: Đã ẩn tạm. Có ${basketItems.length} mục đang chờ xác nhận.`);
+    } else {
+      setIsBasketVisible(false);
+      setIsOpen(false);
+      onPickerCancel();
+    }
+  }, [basketItems.length, onPickerCancel, onLog]);
 
   // Determine effective MIME types
   let effectiveMimeTypes = VIEW_TYPE_MIME_TYPES[config.viewType];
@@ -185,6 +269,9 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
     );
   }
 
+  // Determine button label based on basket state
+  const hasBasketPending = basketItems.length > 0 && !isBasketVisible;
+
   return (
     <section className="panel" id="picker-controls-panel">
       <h2 className="panel-title">
@@ -219,6 +306,21 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
           )}
         </button>
 
+        {/* Pending basket indicator — shows when basket has items but panel is hidden */}
+        {hasBasketPending && (
+          <button
+            className="basket-pending-banner"
+            onClick={() => setIsBasketVisible(true)}
+            title="Mở lại giỏ chọn đang chờ xác nhận"
+          >
+            <span className="basket-pending-icon">🗂️</span>
+            <span className="basket-pending-text">
+              Có <strong>{basketItems.length}</strong> mục đang chờ xác nhận
+            </span>
+            <span className="basket-pending-arrow">→</span>
+          </button>
+        )}
+
         {isOpen && (
           <div className="picker-opening-banner">
             <span className="spinner-icon banner-spinner" />
@@ -245,7 +347,7 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
           </p>
         )}
 
-        {isConfigValid && !isOpen && (
+        {isConfigValid && !isOpen && !hasBasketPending && (
           <p className="picker-hint picker-hint--ready">
             ✓ Sẵn sàng mở · Chế độ xem: <strong>{VIEW_TYPE_LABELS[config.viewType]}</strong>
             {config.viewMode === 'grid' ? ' · Dạng lưới (Grid)' : ' · Danh sách (List)'}
@@ -277,6 +379,19 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
             {pickerViews}
           </DrivePicker>
         </div>
+      )}
+
+      {/* Floating Basket — shown when basket mode is active */}
+      {isBasketVisible && (
+        <FloatingBasket
+          items={basketItems}
+          isPickerOpen={isOpen}
+          onRemoveItem={handleBasketRemoveItem}
+          onClearAll={handleBasketClearAll}
+          onPickMore={handleBasketPickMore}
+          onConfirm={handleBasketConfirm}
+          onDismiss={handleBasketDismiss}
+        />
       )}
 
       {authStatus === 'authenticated' && (
