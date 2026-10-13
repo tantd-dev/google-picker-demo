@@ -21,7 +21,13 @@ const DEFAULT_CONFIG: PickerConfig = {
   appId: import.meta.env.VITE_GOOGLE_APP_ID ?? '',
   scope: import.meta.env.VITE_GOOGLE_SCOPE ?? 'https://www.googleapis.com/auth/drive.readonly',
   viewType: 'all',
-  multiselect: false,
+  viewMode: 'list',
+  multiselect: true,
+  selectFolderEnabled: true,
+  includeSharedDrives: true,
+  includeStarred: true,
+  locale: 'vi',
+  title: '📂 Chọn tệp & thư mục từ Google Drive',
 };
 
 function App() {

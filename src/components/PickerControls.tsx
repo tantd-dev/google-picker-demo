@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import '@googleworkspace/drive-picker-element';
-import { DrivePicker, DrivePickerDocsView } from '@googleworkspace/drive-picker-react';
+import {
+  DrivePicker,
+  DrivePickerDocsView,
+  type DrivePickerDocsViewProps,
+} from '@googleworkspace/drive-picker-react';
 import type { PickerConfig, DriveFile, AuthStatus } from '../types/google-picker';
 import { VIEW_TYPE_MIME_TYPES, VIEW_TYPE_LABELS } from '../types/google-picker';
 import type {
@@ -61,23 +65,53 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
     const response = e.detail as Record<string, unknown>;
     const docs = (response['docs'] ?? []) as Record<string, unknown>[];
 
-    const files: DriveFile[] = docs.map((raw) => ({
-      id: String(raw['id'] ?? ''),
-      name: String(raw['name'] ?? 'Unnamed'),
-      mimeType: String(raw['mimeType'] ?? ''),
-      url: String(raw['url'] ?? raw['embedUrl'] ?? ''),
-      description: String(raw['description'] ?? ''),
-      sizeBytes: typeof raw['sizeBytes'] === 'number' ? raw['sizeBytes'] : undefined,
-      ...raw,
-    }));
+    const files: DriveFile[] = docs.map((raw) => {
+      const id = String(raw['id'] ?? '');
+      const mimeType = String(raw['mimeType'] ?? '');
+      const isFolder =
+        mimeType === 'application/vnd.google-apps.folder' ||
+        raw['type'] === 'folder' ||
+        raw['mimeType'] === 'folder';
 
-    onLog('SUCCESS', `Google Drive: Đã chọn ${files.length} tệp — ${files.map((f) => f.name).join(', ')}`);
+      // Fallback url for Drive items if not directly returned in response
+      const fallbackUrl = isFolder
+        ? (id ? `https://drive.google.com/drive/folders/${id}` : '')
+        : (id ? `https://drive.google.com/file/d/${id}/view` : '');
+
+      const url = String(raw['url'] ?? raw['embedUrl'] ?? fallbackUrl);
+
+      return {
+        id,
+        name: String(raw['name'] ?? (isFolder ? 'Thư mục không tên' : 'Tệp không tên')),
+        mimeType: isFolder ? 'application/vnd.google-apps.folder' : mimeType,
+        url,
+        description: String(raw['description'] ?? ''),
+        sizeBytes: typeof raw['sizeBytes'] === 'number' ? raw['sizeBytes'] : undefined,
+        type: String(raw['type'] ?? (isFolder ? 'folder' : 'file')),
+        isFolder,
+        iconUrl: typeof raw['iconUrl'] === 'string' ? raw['iconUrl'] : undefined,
+        parentId: typeof raw['parentId'] === 'string' ? raw['parentId'] : undefined,
+        ...raw,
+      };
+    });
+
+    const folderCount = files.filter((f) => f.isFolder).length;
+    const fileCount = files.length - folderCount;
+    const summaryParts: string[] = [];
+    if (folderCount > 0) summaryParts.push(`${folderCount} thư mục`);
+    if (fileCount > 0) summaryParts.push(`${fileCount} tệp`);
+    const breakdown = summaryParts.length > 0 ? ` (${summaryParts.join(', ')})` : '';
+
+    onLog(
+      'SUCCESS',
+      `Google Drive: Đã chọn ${files.length} mục${breakdown} — ${files.map((f) => `${f.isFolder ? '📁 ' : '📄 '}${f.name}`).join(', ')}`
+    );
     onFilesPicked(files, response);
     setIsOpen(false);
   };
 
   const handleCanceled = (_e: PickerCanceledEvent) => {
-    onLog('INFO', 'Google Drive: Người dùng đã đóng hoặc hủy chọn tệp.');
+    onLog('INFO', 'Google Drive: Người dùng đã đóng hoặc hủy chọn.');
     onPickerCancel();
     setIsOpen(false);
   };
@@ -104,7 +138,52 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
     setIsOpen(false);
   };
 
-  const mimeTypes = VIEW_TYPE_MIME_TYPES[config.viewType];
+  // Determine effective MIME types
+  let effectiveMimeTypes = VIEW_TYPE_MIME_TYPES[config.viewType];
+  // If specific file filter is selected and folder selection is enabled, include folder MIME type so folders remain pickable
+  if (config.selectFolderEnabled && effectiveMimeTypes && config.viewType !== 'folders') {
+    effectiveMimeTypes = `${effectiveMimeTypes},application/vnd.google-apps.folder`;
+  }
+
+  // Construct views array for DrivePicker with My Drive, Shared Drives and Starred views
+  const pickerViews: React.ReactElement<DrivePickerDocsViewProps>[] = [
+    <DrivePickerDocsView
+      key="my-drive-view"
+      view-id={config.viewType === 'folders' ? 'FOLDERS' : undefined}
+      mime-types={effectiveMimeTypes || undefined}
+      include-folders="true"
+      mode={config.viewMode || 'list'}
+      select-folder-enabled={config.selectFolderEnabled ? 'true' : 'false'}
+    />,
+  ];
+
+  if (config.includeSharedDrives) {
+    pickerViews.push(
+      <DrivePickerDocsView
+        key="shared-drives-view"
+        view-id={config.viewType === 'folders' ? 'FOLDERS' : undefined}
+        enable-drives="true"
+        mode={config.viewMode || 'list'}
+        mime-types={effectiveMimeTypes || undefined}
+        include-folders="true"
+        select-folder-enabled={config.selectFolderEnabled ? 'true' : 'false'}
+      />
+    );
+  }
+
+  if (config.includeStarred) {
+    pickerViews.push(
+      <DrivePickerDocsView
+        key="starred-view"
+        view-id={config.viewType === 'folders' ? 'FOLDERS' : undefined}
+        starred="true"
+        mode={config.viewMode || 'list'}
+        mime-types={effectiveMimeTypes || undefined}
+        include-folders="true"
+        select-folder-enabled={config.selectFolderEnabled ? 'true' : 'false'}
+      />
+    );
+  }
 
   return (
     <section className="panel" id="picker-controls-panel">
@@ -142,14 +221,18 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
 
         {isOpen && (
           <div className="picker-opening-banner">
-            <span className="banner-text">
-              ⏳ Cửa sổ Google Drive Picker đang được kích hoạt. Hãy chọn tài khoản và cấp quyền nếu được hỏi.
-            </span>
+            <span className="spinner-icon banner-spinner" />
+            <div className="banner-content">
+              <strong>Cửa sổ Google Picker đang mở</strong>
+              <span className="banner-text">
+                Chọn tài khoản và cấp quyền hoặc chọn tệp bạn muốn lấy từ cửa sổ Google Drive.
+              </span>
+            </div>
             <button
               type="button"
-              className="btn-sm btn-ghost"
+              className="btn-sm btn-ghost banner-cancel-btn"
               onClick={handleCancelOpening}
-              title="Đóng tiến trình nếu bị treo"
+              title="Đóng tiến trình nếu bị treo hoặc không muốn chọn nữa"
             >
               Hủy
             </button>
@@ -165,7 +248,11 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
         {isConfigValid && !isOpen && (
           <p className="picker-hint picker-hint--ready">
             ✓ Sẵn sàng mở · Chế độ xem: <strong>{VIEW_TYPE_LABELS[config.viewType]}</strong>
-            {config.multiselect ? ' · Chọn nhiều file' : ''}
+            {config.viewMode === 'grid' ? ' · Dạng lưới (Grid)' : ' · Danh sách (List)'}
+            {config.multiselect ? ' · Chọn nhiều (Checkbox)' : ' · Chọn đơn'}
+            {config.selectFolderEnabled ? ' · Cho phép chọn thư mục' : ''}
+            {config.includeSharedDrives ? ' · Shared drives' : ''}
+            {config.includeStarred ? ' · Starred' : ''}
           </p>
         )}
       </div>
@@ -179,16 +266,15 @@ export const PickerControls: React.FC<PickerControlsProps> = ({
             app-id={config.appId}
             scope={config.scope}
             multiselect={config.multiselect}
+            locale={config.locale || 'vi'}
+            title={config.title || '📂 Chọn tệp & thư mục từ Google Drive'}
             oauth-token={cachedToken || undefined}
             onPicked={handlePicked}
             onCanceled={handleCanceled}
             onOauthResponse={handleOauthResponse}
             onOauthError={handleOauthError}
           >
-            <DrivePickerDocsView
-              mime-types={mimeTypes || undefined}
-              enable-drives="true"
-            />
+            {pickerViews}
           </DrivePicker>
         </div>
       )}

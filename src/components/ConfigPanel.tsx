@@ -8,101 +8,24 @@ interface ConfigPanelProps {
   onChange: (config: PickerConfig) => void;
 }
 
-const VIEW_TYPES: ViewType[] = ['all', 'docs', 'sheets', 'slides', 'images', 'pdfs'];
-
-// function maskString(str: string, keepStart = 8, keepEnd = 4): string {
-//   if (!str) return '—';
-//   if (str.length <= keepStart + keepEnd) return str;
-//   return `${str.substring(0, keepStart)}••••••••${str.substring(str.length - keepEnd)}`;
-// }
+const VIEW_TYPES: ViewType[] = ['all', 'folders', 'docs', 'sheets', 'slides', 'images', 'pdfs'];
 
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onChange }) => {
-  // const [showOverride, setShowOverride] = useState(false);
-  // const [showFullKeys, setShowFullKeys] = useState(false);
-
   const update = (field: keyof PickerConfig, value: string | boolean) => {
     onChange({ ...config, [field]: value });
   };
 
-  // const handleResetToEnv = () => {
-  //   onChange({
-  //     apiKey: import.meta.env.VITE_GOOGLE_API_KEY ?? '',
-  //     clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
-  //     appId: import.meta.env.VITE_GOOGLE_APP_ID ?? '',
-  //     scope: import.meta.env.VITE_GOOGLE_SCOPE ?? 'https://www.googleapis.com/auth/drive.readonly',
-  //     viewType: config.viewType,
-  //     multiselect: config.multiselect,
-  //   });
-  // };
-
-  // const isKeyConfigured = Boolean(config.apiKey);
-  // const isClientConfigured = Boolean(config.clientId);
-  // const isAppIdConfigured = Boolean(config.appId);
-
   return (
     <section className="panel" id="config-panel">
-      {/* <div className="panel-header-row">
-        <h2 className="panel-title" style={{ margin: 0, border: 'none', padding: 0 }}>
-          <span className="panel-icon">⚙️</span> Cấu hình Google API (.env)
-        </h2>
-        <span className="env-tag">.env</span>
-      </div> */}
-
-      {/* <div className="env-status-card">
-        <div className="env-status-item">
-          <div className="env-status-label">
-            <span>API Key</span>
-            <span className={`status-dot ${isKeyConfigured ? 'status-dot--ok' : 'status-dot--missing'}`} />
-          </div>
-          <div className="env-status-value">
-            <code>
-              {isKeyConfigured
-                ? (showFullKeys ? config.apiKey : maskString(config.apiKey, 8, 4))
-                : 'Chưa có trong .env'}
-            </code>
-          </div>
-        </div>
-
-        <div className="env-status-item">
-          <div className="env-status-label">
-            <span>OAuth Client ID</span>
-            <span className={`status-dot ${isClientConfigured ? 'status-dot--ok' : 'status-dot--missing'}`} />
-          </div>
-          <div className="env-status-value">
-            <code>
-              {isClientConfigured
-                ? (showFullKeys ? config.clientId : maskString(config.clientId, 12, 16))
-                : 'Chưa có trong .env'}
-            </code>
-          </div>
-        </div>
-
-        <div className="env-status-item">
-          <div className="env-status-label">
-            <span>App ID / Project No</span>
-            <span className={`status-dot ${isAppIdConfigured ? 'status-dot--ok' : 'status-dot--missing'}`} />
-          </div>
-          <div className="env-status-value">
-            <code>{config.appId || 'Chưa có trong .env'}</code>
-          </div>
-        </div>
-
-        <div className="env-status-actions">
-          <button
-            type="button"
-            className="btn-link"
-            onClick={() => setShowFullKeys(!showFullKeys)}
-          >
-            {showFullKeys ? 'Ẩn bớt ký tự' : 'Hiện đầy đủ'}
-          </button>
-        </div>
-      </div> */}
+      <h2 className="panel-title">
+        <span className="panel-icon">⚙️</span> Cấu hình Picker
+      </h2>
 
       <div className="config-grid" style={{ marginTop: '14px' }}>
         <div className="form-group">
           <label htmlFor="view-type" className="form-label">
             Chế độ xem (View Filter)
-            <span className="form-hint">Lọc loại tệp hiển thị trong Google Picker</span>
+            <span className="form-hint">Lọc loại tệp/thư mục hiển thị trong Google Picker</span>
           </label>
           <select
             id="view-type"
@@ -118,7 +41,54 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onChange }) =>
           </select>
         </div>
 
-        <div className="form-group form-group--checkbox">
+        {/* <div className="form-group">
+          <label htmlFor="view-mode" className="form-label">
+            Kiểu hiển thị danh sách (Layout Mode)
+            <span className="form-hint">Dạng danh sách truyền thống hoặc dạng lưới thẻ thumbnail</span>
+          </label>
+          <select
+            id="view-mode"
+            className="form-select"
+            value={config.viewMode || 'list'}
+            onChange={(e) => update('viewMode', e.target.value as 'list' | 'grid')}
+          >
+            <option value="list">📋 Danh sách chi tiết (List Mode)</option>
+            <option value="grid">🖼️ Lưới xem trước thẻ hình ảnh (Grid Thumbnail Mode)</option>
+          </select>
+        </div> */}
+
+        {/* <div className="form-group">
+          <label htmlFor="picker-title" className="form-label">
+            Tiêu đề Popup Picker
+            <span className="form-hint">Tiêu đề hiển thị ở thanh trên cùng của cửa sổ Google Picker</span>
+          </label>
+          <input
+            id="picker-title"
+            type="text"
+            className="form-input"
+            value={config.title}
+            placeholder="Ví dụ: 📂 Chọn tệp từ Google Drive"
+            onChange={(e) => update('title', e.target.value)}
+          />
+        </div> */}
+
+        {/* <div className="form-group">
+          <label htmlFor="picker-locale" className="form-label">
+            Ngôn ngữ hiển thị (Locale)
+            <span className="form-hint">Dịch toàn bộ nút bấm, tên cột và hướng dẫn trong popup</span>
+          </label>
+          <select
+            id="picker-locale"
+            className="form-select"
+            value={config.locale || 'vi'}
+            onChange={(e) => update('locale', e.target.value)}
+          >
+            <option value="vi">🇻🇳 Tiếng Việt (vi)</option>
+            <option value="en">🇺🇸 Tiếng Anh (en)</option>
+          </select>
+        </div> */}
+
+        {/* <div className="form-group form-group--checkbox">
           <label htmlFor="multiselect" className="form-label form-label--inline">
             <input
               id="multiselect"
@@ -127,9 +97,68 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onChange }) =>
               checked={config.multiselect}
               onChange={(e) => update('multiselect', e.target.checked)}
             />
-            Cho phép chọn nhiều file cùng lúc (Multi-select)
+            <span>
+              <strong>Cho phép chọn nhiều mục cùng lúc (Multi-select)</strong>
+              <span className="form-hint" style={{ display: 'block', marginTop: '2px' }}>
+                Hiển thị ô checkbox trên từng tệp và thư mục trong danh sách
+              </span>
+            </span>
+          </label>
+        </div> */}
+
+        <div className="form-group form-group--checkbox">
+          <label htmlFor="select-folder-enabled" className="form-label form-label--inline">
+            <input
+              id="select-folder-enabled"
+              type="checkbox"
+              className="form-checkbox"
+              checked={config.selectFolderEnabled}
+              onChange={(e) => update('selectFolderEnabled', e.target.checked)}
+            />
+            <span>
+              <strong>Cho phép chọn / checkbox Thư mục (Folders)</strong>
+              <span className="form-hint" style={{ display: 'block', marginTop: '2px' }}>
+                Bật checkbox trên các thư mục trong My Drive để pick được thư mục
+              </span>
+            </span>
           </label>
         </div>
+
+        {/* <div className="form-group form-group--checkbox">
+          <label htmlFor="include-shared-drives" className="form-label form-label--inline">
+            <input
+              id="include-shared-drives"
+              type="checkbox"
+              className="form-checkbox"
+              checked={config.includeSharedDrives}
+              onChange={(e) => update('includeSharedDrives', e.target.checked)}
+            />
+            <span>
+              <strong>Bao gồm Bộ nhớ dùng chung (Shared drives)</strong>
+              <span className="form-hint" style={{ display: 'block', marginTop: '2px' }}>
+                Hiển thị tab Bộ nhớ dùng chung song song cùng My Drive
+              </span>
+            </span>
+          </label>
+        </div> */}
+
+        {/* <div className="form-group form-group--checkbox">
+          <label htmlFor="include-starred" className="form-label form-label--inline">
+            <input
+              id="include-starred"
+              type="checkbox"
+              className="form-checkbox"
+              checked={config.includeStarred}
+              onChange={(e) => update('includeStarred', e.target.checked)}
+            />
+            <span>
+              <strong>Thêm tab Có gắn dấu sao (Starred)</strong>
+              <span className="form-hint" style={{ display: 'block', marginTop: '2px' }}>
+                Hiển thị tab riêng để duyệt nhanh các file đã được đánh dấu sao quan trọng
+              </span>
+            </span>
+          </label>
+        </div> */}
       </div>
 
       {/* Collapsible advanced manual override */}

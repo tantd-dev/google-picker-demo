@@ -1,17 +1,26 @@
 // Google Picker type definitions
 // Note: google.picker types are available globally via @types/google.picker
 
+export type ViewMode = 'list' | 'grid';
+
 export interface PickerConfig {
   apiKey: string;
   clientId: string;
   appId: string;
   scope: string;
   viewType: ViewType;
+  viewMode: ViewMode;
   multiselect: boolean;
+  selectFolderEnabled: boolean;
+  includeSharedDrives: boolean;
+  includeStarred: boolean;
+  locale: string;
+  title: string;
 }
 
 export type ViewType =
   | 'all'
+  | 'folders'
   | 'docs'
   | 'sheets'
   | 'slides'
@@ -25,6 +34,10 @@ export interface DriveFile {
   url?: string;
   description?: string;
   sizeBytes?: number;
+  type?: string;
+  isFolder?: boolean;
+  iconUrl?: string;
+  parentId?: string;
   [key: string]: unknown;
 }
 
@@ -52,6 +65,7 @@ export interface AppState {
 // View type to MIME type mappings
 export const VIEW_TYPE_MIME_TYPES: Record<ViewType, string> = {
   all: '',
+  folders: 'application/vnd.google-apps.folder',
   docs: 'application/vnd.google-apps.document',
   sheets: 'application/vnd.google-apps.spreadsheet',
   slides: 'application/vnd.google-apps.presentation',
@@ -60,10 +74,11 @@ export const VIEW_TYPE_MIME_TYPES: Record<ViewType, string> = {
 };
 
 export const VIEW_TYPE_LABELS: Record<ViewType, string> = {
-  all: 'All Files',
+  all: 'Tất cả (Tệp & Thư mục)',
+  folders: 'Chỉ thư mục (Folders only)',
   docs: 'Google Docs',
   sheets: 'Google Sheets',
   slides: 'Google Slides',
-  images: 'Images',
-  pdfs: 'PDFs',
+  images: 'Hình ảnh (Images)',
+  pdfs: 'Tài liệu PDF',
 };
